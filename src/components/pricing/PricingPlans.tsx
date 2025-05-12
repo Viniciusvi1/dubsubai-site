@@ -1,10 +1,19 @@
-import { Check } from "lucide-react";
+import { useState } from "react";
+import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const PricingPlans = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState<string | null>(null);
+  
   const plans = [
     {
+      id: "free",
       name: "Gratuito",
       price: "R$0",
       period: "para sempre",
@@ -21,6 +30,7 @@ const PricingPlans = () => {
       highlighted: false,
     },
     {
+      id: "professional",
       name: "Profissional",
       price: "R$49",
       period: "por mês",
@@ -39,6 +49,7 @@ const PricingPlans = () => {
       highlighted: true,
     },
     {
+      id: "enterprise",
       name: "Empresarial",
       price: "R$199",
       period: "por mês",
@@ -59,6 +70,61 @@ const PricingPlans = () => {
     },
   ];
 
+  const handleSubscription = async (planId: string) => {
+    try {
+      setIsLoading(planId);
+      
+      // Check if user is logged in
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // Redirect to login if user is not authenticated
+        toast({
+          title: "Login necessário",
+          description: "Você precisa estar logado para assinar um plano.",
+        });
+        navigate("/login", { state: { redirectAfterLogin: "/pricing" } });
+        return;
+      }
+      
+      if (planId === "free") {
+        // For free tier, redirect to dashboard
+        navigate("/dashboard");
+        toast({
+          title: "Plano Gratuito Ativo",
+          description: "Você está usando o plano gratuito do DubSubAI.",
+        });
+        return;
+      }
+      
+      // Call edge function to create checkout session
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { priceId: planId }
+      });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      if (data?.url) {
+        // Redirect to Stripe checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error("Falha ao criar sessão de pagamento");
+      }
+      
+    } catch (error) {
+      console.error("Erro ao processar assinatura:", error);
+      toast({
+        title: "Erro ao processar assinatura",
+        description: error instanceof Error ? error.message : "Ocorreu um erro inesperado",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(null);
+    }
+  };
+
   return (
     <section className="bg-white section-padding">
       <div className="container-custom">
@@ -71,9 +137,9 @@ const PricingPlans = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {plans.map((plan, index) => (
+          {plans.map((plan) => (
             <div 
-              key={index} 
+              key={plan.id} 
               className={`rounded-xl border ${
                 plan.highlighted 
                   ? "border-brand-blue shadow-lg shadow-blue-100" 
@@ -104,14 +170,21 @@ const PricingPlans = () => {
               </ul>
 
               <div className="mt-auto">
-                <Link to="/signup" className="block">
-                  <Button 
-                    variant={plan.buttonVariant} 
-                    className={`w-full ${plan.highlighted ? "bg-brand-blue hover:bg-brand-dark" : ""}`}
-                  >
-                    {plan.buttonText}
-                  </Button>
-                </Link>
+                <Button 
+                  variant={plan.buttonVariant}
+                  onClick={() => handleSubscription(plan.id)}
+                  disabled={isLoading !== null}
+                  className={`w-full ${plan.highlighted ? "bg-brand-blue hover:bg-brand-dark" : ""}`}
+                >
+                  {isLoading === plan.id ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    plan.buttonText
+                  )}
+                </Button>
               </div>
             </div>
           ))}
@@ -120,7 +193,7 @@ const PricingPlans = () => {
         <div className="text-center mt-12">
           <p className="text-gray-600">
             Precisa de um plano personalizado? {" "}
-            <Link to="/contact" className="text-brand-blue hover:underline font-medium">
+            <Link to="/support" className="text-brand-blue hover:underline font-medium">
               Entre em contato conosco
             </Link>
           </p>

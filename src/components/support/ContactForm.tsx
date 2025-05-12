@@ -54,12 +54,12 @@ const ContactForm = () => {
             <div className="space-y-6">
               <div>
                 <h3 className="text-xl font-semibold mb-2">Email</h3>
-                <p className="text-gray-700">suporte@dubsubai.com</p>
+                <p className="text-gray-700">dubsubai@hotmail.com</p>
               </div>
               
               <div>
                 <h3 className="text-xl font-semibold mb-2">Telefone</h3>
-                <p className="text-gray-700">+55 (11) 3456-7890</p>
+                <p className="text-gray-700">+55 11 93390-2031</p>
               </div>
               
               <div>
