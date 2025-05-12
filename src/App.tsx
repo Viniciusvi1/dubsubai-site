@@ -1,3 +1,4 @@
+import VideoUploadPage from "./pages/VideoUploadPage";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +16,9 @@ import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import CareersPage from "./pages/CareersPage";
+import SubtitlesPage from "./pages/SubtitlesPage";
+<Route path="/upload" element={<VideoUploadPage />} />
+
 
 const queryClient = new QueryClient();
 
